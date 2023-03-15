@@ -18,9 +18,9 @@ Zijun Deng, Xiangteng He and Yuxin Peng*, Zijun Deng, Xiangteng He and Yuxin Pen
 Run the following commands to install the same dependencies as our experiments.
 
 ```bash
-$ conda install -c pytorch pytorch=1.7.1 torchvision cudatoolkit=11.0
-$ pip install git+https://github.com/openai/CLIP.git
-$ pip install -r requirements.txt
+conda install -c pytorch pytorch=1.7.1 torchvision cudatoolkit=11.0
+pip install git+https://github.com/openai/CLIP.git
+pip install -r requirements.txt
 ```
 
 
@@ -40,10 +40,10 @@ Download the image data, pretrained models, and parser tool that we used from th
 
 You can also train the models by yourself.
 ```bash
-$ # pretrained_models/bird_netG_epoch_700.pth
-$ python code/main_DMGAN.py --cfg code/cfg/bird_DMGAN.yml --gpu 0
-$ # pretrained_models/flower_netG_epoch_325.pth
-$ python code/main_DMGAN.py --cfg code/cfg/flower_DMGAN.yml --gpu 0
+# pretrained_models/bird_netG_epoch_700.pth
+python code/main_DMGAN.py --cfg code/cfg/bird_DMGAN.yml --gpu 0
+# pretrained_models/flower_netG_epoch_325.pth
+python code/main_DMGAN.py --cfg code/cfg/flower_DMGAN.yml --gpu 0
 ```
 
 # Evaluate
