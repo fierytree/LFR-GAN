@@ -24,10 +24,10 @@ $ pip install -r requirements.txt
 
 # Data Preparation
 
-- Download the pre-processed datasets that we used from the [link](https://pan.baidu.com/s/1LwAyB1R86P3xMZxIPm1vwQ) (password: dg1a) and unzip them to ./datasets folders.
+- Download the image data, pretrained models, and parser tool that we used from the [link](https://pan.baidu.com/s/1Q9Vh2JTOTHnsjmKlyqum2g) (password: 2fsx) and unzip them to corresponding folders.
 
 
-# Generate Image on Lafite latent space
+# Generate Image
 
 1. For bird images: `python code/main.py --cfg=code/cfg/eval_bird.yml --lafite=pretrained_models/birds.pkl`
 
