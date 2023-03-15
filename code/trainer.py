@@ -25,18 +25,6 @@ import time
 import numpy as np
 import sys
 
-from masks import mask_correlated_samples
-from nt_xent import NT_Xent
-
-import clip
-
-def l2norm(X, dim, eps=1e-8):
-    """L2-normalize columns of X
-    """
-    norm = torch.pow(X, 2).sum(dim=dim, keepdim=True).sqrt() + eps
-    X = torch.div(X, norm)
-    return X
-
 # ################# Text to image task############################ #
 class condGANTrainer(object):
     def __init__(self, output_dir, data_loader, n_words, ixtoword, dataset):
@@ -99,33 +87,30 @@ class condGANTrainer(object):
         text_encoder.eval()
 
         # #######################generator and discriminators############## #
-        from model import D_NET256
-        netsD = [D_NET256()]
-        netG = G()
-        clip_net, preprocess = clip.load("/home/pengjiazhen/DM-GAN+CL/ViT-B-32.pt")
-        # if cfg.GAN.B_DCGAN:
-        #     if cfg.TREE.BRANCH_NUM ==1:
-        #         from model import D_NET64 as D_NET
-        #     elif cfg.TREE.BRANCH_NUM == 2:
-        #         from model import D_NET128 as D_NET
-        #     else:  # cfg.TREE.BRANCH_NUM == 3:
-        #         from model import D_NET256 as D_NET
-        #     # TODO: elif cfg.TREE.BRANCH_NUM > 3:
-        #     netG = G_DCGAN()
-        #     netsD = [D_NET(b_jcu=False)]
-        # else:
-        #     from model import D_NET64, D_NET128, D_NET256
-        #     netG = G_NET()
-        #     if cfg.TREE.BRANCH_NUM > 0:
-        #         netsD.append(D_NET64())
-        #     if cfg.TREE.BRANCH_NUM > 1:
-        #         netsD.append(D_NET128())
-        #     if cfg.TREE.BRANCH_NUM > 2:
-        #         netsD.append(D_NET256())
-        #     # TODO: if cfg.TREE.BRANCH_NUM > 3:
+        netsD = []
+        if cfg.GAN.B_DCGAN:
+            if cfg.TREE.BRANCH_NUM ==1:
+                from model import D_NET64 as D_NET
+            elif cfg.TREE.BRANCH_NUM == 2:
+                from model import D_NET128 as D_NET
+            else:  # cfg.TREE.BRANCH_NUM == 3:
+                from model import D_NET256 as D_NET
+            # TODO: elif cfg.TREE.BRANCH_NUM > 3:
+            netG = G_DCGAN()
+            netsD = [D_NET(b_jcu=False)]
+        else:
+            from model import D_NET64, D_NET128, D_NET256
+            netG = G_NET()
+            if cfg.TREE.BRANCH_NUM > 0:
+                netsD.append(D_NET64())
+            if cfg.TREE.BRANCH_NUM > 1:
+                netsD.append(D_NET128())
+            if cfg.TREE.BRANCH_NUM > 2:
+                netsD.append(D_NET256())
+            # TODO: if cfg.TREE.BRANCH_NUM > 3:
 
-        print('number of netG trainable parameters =', count_parameters(netG))
-        print('number of netsD trainable parameters =', count_parameters(netsD[-1]))
+        print('number of trainable parameters =', count_parameters(netG))
+        print('number of trainable parameters =', count_parameters(netsD[-1]))
 
         netG.apply(weights_init)
         # print(netG)
@@ -160,7 +145,7 @@ class condGANTrainer(object):
             netG.cuda()
             for i in range(len(netsD)):
                 netsD[i].cuda()
-        return [text_encoder, image_encoder, netG, netsD,clip_net, preprocess, epoch]
+        return [text_encoder, image_encoder, netG, netsD, epoch]
 
     def define_optimizers(self, netG, netsD):
         optimizersD = []
@@ -250,12 +235,10 @@ class condGANTrainer(object):
 
 
     def train(self):
-        text_encoder, image_encoder, netG, netsD, start_epoch, clip_net, preprocess = self.build_models()
+        text_encoder, image_encoder, netG, netsD, start_epoch = self.build_models()
         avg_param_G = copy_G_params(netG)
         optimizerG, optimizersD = self.define_optimizers(netG, netsD)
         real_labels, fake_labels, match_labels = self.prepare_labels()
-
-        real_labels_2, fake_labels_2, match_labels_2 = self.prepare_labels()
 
         batch_size = self.batch_size
         nz = cfg.GAN.Z_DIM
@@ -265,17 +248,8 @@ class condGANTrainer(object):
             noise, fixed_noise = noise.cuda(), fixed_noise.cuda()
 
         gen_iterations = 0
-        
-        mask = mask_correlated_samples(self)
-
-        temperature = 0.5
-        device = noise.get_device()
-        criterion = NT_Xent(batch_size, temperature, mask, device)
-        
         # gen_iterations = start_epoch * self.num_batches
         for epoch in range(start_epoch, self.max_epoch):
-            if epoch==1:
-                assert 0
             start_t = time.time()
 
             data_iter = iter(self.data_loader)
@@ -288,11 +262,7 @@ class condGANTrainer(object):
                 # (1) Prepare training data and Compute text embeddings
                 ######################################################
                 data = data_iter.next()
-                
-                # imgs, captions, cap_lens, class_ids, keys = prepare_data(data)
-                imgs, imgs_2, captions, cap_lens, class_ids, keys, captions_2, cap_lens_2, class_ids_2, \
-                sort_ind, sort_ind_2 = prepare_data(data)
-                
+                imgs, captions, cap_lens, class_ids, keys = prepare_data(data)
 
                 hidden = text_encoder.init_hidden(batch_size)
                 # words_embs: batch_size x nef x seq_len
@@ -303,21 +273,12 @@ class condGANTrainer(object):
                 num_words = words_embs.size(2)
                 if mask.size(1) > num_words:
                     mask = mask[:, :num_words]
-                    
-                words_embs_2, sent_emb_2 = text_encoder(captions_2, cap_lens_2, hidden)
-                words_embs_2, sent_emb_2 = words_embs_2.detach(), sent_emb_2.detach()
-                mask_2 = (captions_2 == 0)
-                num_words_2 = words_embs_2.size(2)
-                if mask_2.size(1) > num_words_2:
-                    mask_2 = mask_2[:, :num_words_2]
 
                 #######################################################
                 # (2) Generate fake images
                 ######################################################
                 noise.data.normal_(0, 1)
                 fake_imgs, _, mu, logvar = netG(noise, sent_emb, words_embs, mask, cap_lens)
-                fake_imgs_2, _, mu_2, logvar_2 = netG(noise, sent_emb_2, words_embs_2, mask_2, cap_lens_2)
-
 
                 #######################################################
                 # (3) Update D network
@@ -328,19 +289,12 @@ class condGANTrainer(object):
                     netsD[i].zero_grad()
                     errD, log = discriminator_loss(netsD[i], imgs[i], fake_imgs[i],
                                               sent_emb, real_labels, fake_labels)
-                    errD_2, log_2 = discriminator_loss(netsD[i], imgs_2[i], fake_imgs_2[i],
-                                                sent_emb_2, real_labels_2, fake_labels_2)
-                    
-                    errD += errD_2
                     # backward and update parameters
                     errD.backward()
                     optimizersD[i].step()
                     errD_total += errD
                     D_logs += 'errD%d: %.2f ' % (i, errD.item())
                     D_logs += log
-                    
-                    D_logs += 'errD%d_2: %.2f ' % (i, errD_2.item())  + log_2
-
 
                 #######################################################
                 # (4) Update G network: maximize log(D(G(z)))
@@ -352,50 +306,12 @@ class condGANTrainer(object):
                 # do not need to compute gradient for Ds
                 # self.set_requires_grad_value(netsD, False)
                 netG.zero_grad()
-                errG_total, G_logs, cnn_code = \
-                    generator_loss(netsD, image_encoder, [fake_imgs[0]], real_labels,
+                errG_total, G_logs = \
+                    generator_loss(netsD, image_encoder, fake_imgs, real_labels,
                                    words_embs, sent_emb, match_labels, cap_lens, class_ids)
                 kl_loss = KL_loss(mu, logvar)
-                clip_loss=transfer_loss(clip_net,preprocess, fake_imgs, descriptions)
-                errG_total += kl_loss + clip_loss
+                errG_total += kl_loss
                 G_logs += 'kl_loss: %.2f ' % kl_loss.item()
-                
-                
-                errG_total_2, G_logs_2, cnn_code_2 = \
-                    generator_loss(netsD, image_encoder, [fake_imgs_2[0]], real_labels_2,
-                                   words_embs_2, sent_emb_2, match_labels_2, cap_lens_2, class_ids_2)
-                kl_loss_2 = KL_loss(mu_2, logvar_2)
-                clip_loss2=transfer_loss(clip_net,preprocess, fake_imgs, descriptions)
-                errG_total_2 += kl_loss_2 + clip_loss2
-                G_logs_2 += 'kl_loss: %.2f ' % kl_loss_2.item()
-
-                G_logs += G_logs_2
-
-                errG_total += errG_total_2
-
-
-                _, ori_indices = torch.sort(sort_ind, 0)
-                _, ori_indices_2 = torch.sort(sort_ind_2, 0)
-
-                # total_contra_loss = 0
-                # i = -1
-                cnn_code = cnn_code[ori_indices]
-                cnn_code_2 = cnn_code_2[ori_indices_2]
-
-                cnn_code = l2norm(cnn_code, dim=1)
-                cnn_code_2 = l2norm(cnn_code_2, dim=1)
-
-                contrative_loss = criterion(cnn_code, cnn_code_2)
-                # total_contra_loss += contrative_loss
-
-                contrative_loss = contrative_loss * 0.2
-
-                G_logs += 'contrative_loss: %.2f ' % contrative_loss.item()
-
-                errG_total += contrative_loss
-                
-                
-                
                 # backward and update parameters
                 errG_total.backward()
                 optimizerG.step()
@@ -514,9 +430,7 @@ class condGANTrainer(object):
                     # if step > 50:
                     #     break
 
-                    #imgs, captions, cap_lens, class_ids, keys = prepare_data(data)
-                    imgs, imgs_2, captions, cap_lens, class_ids, keys, captions_2, cap_lens_2, class_ids_2, \
-                sort_ind, sort_ind_2 = prepare_data(data) 
+                    imgs, captions, cap_lens, class_ids, keys = prepare_data(data)
 
                     hidden = text_encoder.init_hidden(batch_size)
                     # words_embs: batch_size x nef x seq_len
@@ -612,7 +526,6 @@ class condGANTrainer(object):
             for key in data_dic:
                 save_dir = '%s/%s' % (s_tmp, key)
                 mkdir_p(save_dir)
-                print(save_dir)
                 captions, cap_lens, sorted_indices = data_dic[key]
 
                 batch_size = captions.shape[0]

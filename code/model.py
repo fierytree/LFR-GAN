@@ -7,12 +7,11 @@ import torch.utils.model_zoo as model_zoo
 import torch.nn.functional as F
 
 from torch.nn.utils.rnn import pack_padded_sequence, pad_packed_sequence
+
 from miscc.config import cfg
 from GlobalAttention import GlobalAttentionGeneral as ATT_NET
 from GlobalAttention import GlobalAttention_text as ATT_NET_text
 from spectral import SpectralNorm
-
-from stylegan2.model import *
 
 class GLU(nn.Module):
     def __init__(self):
@@ -122,13 +121,10 @@ class RNN_ENCODER(nn.Module):
     def init_hidden(self, bsz):
         weight = next(self.parameters()).data
         if self.rnn_type == 'LSTM':
-            return (Variable(weight.new(self.nlayers * self.num_directions,
-                                        bsz, self.nhidden).zero_()),
-                    Variable(weight.new(self.nlayers * self.num_directions,
-                                        bsz, self.nhidden).zero_()))
+            return (Variable(weight.new(self.nlayers * self.num_directions, bsz, self.nhidden).zero_()),
+                    Variable(weight.new(self.nlayers * self.num_directions, bsz, self.nhidden).zero_()))
         else:
-            return Variable(weight.new(self.nlayers * self.num_directions,
-                                       bsz, self.nhidden).zero_())
+            return Variable(weight.new(self.nlayers * self.num_directions, bsz, self.nhidden).zero_())
 
     def forward(self, captions, cap_lens, hidden, mask=None):
         # input: torch.LongTensor of size batch x n_steps
@@ -207,7 +203,7 @@ class CNN_ENCODER(nn.Module):
     def forward(self, x):
         features = None
         # --> fixed-size input: batch x 3 x 299 x 299
-        x = nn.Upsample(size=(299, 299), mode='bilinear')(x)
+        x = nn.Upsample(size=(299, 299), mode='bilinear', align_corners=True)(x)
         # 299 x 299 x 3
         x = self.Conv2d_1a_3x3(x)
         # 149 x 149 x 32
@@ -703,19 +699,3 @@ class D_NET256(nn.Module):
         x_code4 = self.img_code_s64_1(x_code4)
         x_code4 = self.img_code_s64_2(x_code4)
         return x_code4
-
-
-class MAPPER(nn.Module):
-    def __init__(self):
-        super(MAPPER, self).__init__()
-        self.fc1 = nn.Linear(256, 14 * 512)
-
-    def forward(self, sent_emb, sent_code):
-        dt = sent_emb - sent_code
-        dw = self.fc1(dt)
-
-        topk, _ = torch.topk(torch.abs(dw), 20, dim=1)
-        thresholds, _ = topk.min(dim=1)
-        for i in range(dw.shape[0]):
-            dw[i][dw[i] < thresholds[i]] = 0
-        return dw
