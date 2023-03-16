@@ -87,7 +87,7 @@ class CommaSeparatedList(click.ParamType):
 
 @click.command()
 @click.pass_context
-@click.option('network_pkl', '--network', help='Network pickle filename or URL', metavar='PATH', required=True)
+@click.option('network_pkl', '--lafite', help='Network pickle filename or URL', metavar='PATH', required=True)
 @click.option('--metrics', help='Comma-separated list or "none"', type=CommaSeparatedList(), default='fid50k_full', show_default=True)
 @click.option('--data', help='Dataset to evaluate metrics against (directory or zip) [default: same as training data]', metavar='PATH')
 @click.option('--test_data', help='Dataset to evaluate metrics against (directory or zip) [default: same as training data]', metavar='PATH')

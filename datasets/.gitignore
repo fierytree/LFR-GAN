@@ -5,3 +5,5 @@ datasets_bird_coco.py
 flower_test_clip.zip
 flower_train_clip.zip
 flower_train_clip2.zip
+birds/
+flower/
