@@ -26,7 +26,7 @@ def compute_is(opts, num_gen, num_splits):
         part = gen_probs[i * num_gen // num_splits : (i + 1) * num_gen // num_splits]
         kl = part * (np.log(part) - np.log(np.mean(part, axis=0, keepdims=True)))
         kl = np.mean(np.sum(kl, axis=1))
-        scores.append(np.exp(kl)+opts.beta)
+        scores.append(np.exp(kl))
     return float(np.mean(scores)), float(np.std(scores))
 
 #----------------------------------------------------------------------------

@@ -271,7 +271,8 @@ if __name__== '__main__':
     torch.manual_seed(manualSeed)
 
     sentences = [
-        'A bird with a blue belly and a green crown, the tail is yellow and the feet are red.'
+        'A bird with a blue belly and a green crown, the tail is yellow and the feet are red.',
+        # 'A bird with a orange belly and a black crown, the tail is black.'
     ]
 
     # sentences = [

@@ -1,5 +1,5 @@
 import os
-# os.environ["CUDA_VISIBLE_DEVICES"] = "2"
+os.environ["CUDA_VISIBLE_DEVICES"] = "4"
 
 import torch
 from rembg.bg import remove,pytorch_remove
@@ -25,6 +25,7 @@ def remove_bg(input_path,output_path):
 
 
 if __name__=='__main__':
-    input = 'datasets/birds/images/016.Painted_Bunting/Painted_Bunting_0091_15198.jpg'
-    output = '/output/1.png'
+    # input = 'datasets/birds/images/016.Painted_Bunting/Painted_Bunting_0091_15198.jpg'
+    input = 'output/output2.png'
+    output = 'output/1.png'
     remove_bg(input,output)

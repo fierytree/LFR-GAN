@@ -25,7 +25,7 @@ import torchvision.transforms as T
 #         self.cache          = cache
 
 class MetricOptions:
-    def __init__(self, G_ema=None, G=None, D=None, M=None, G_kwargs={}, D_kwargs ={}, M_kwargs ={}, dataset_kwargs={}, testset_kwargs={}, num_gpus=1, rank=0, device=None, progress=None, cache=True, txt_recon=True, img_recon=False, metric_only_test=False, alpha=0, beta=0):
+    def __init__(self, G_ema=None, G=None, D=None, M=None, G_kwargs={}, D_kwargs ={}, M_kwargs ={}, dataset_kwargs={}, testset_kwargs={}, num_gpus=1, rank=0, device=None, progress=None, cache=True, txt_recon=True, img_recon=False, metric_only_test=False):
         assert 0 <= rank < num_gpus
         self.G              = G
 #         self.G_ema          = G_ema
@@ -48,8 +48,6 @@ class MetricOptions:
         self.img_recon = img_recon
         self.metric_only_test = metric_only_test
 
-        self.alpha = alpha
-        self.beta = beta
 
 #----------------------------------------------------------------------------
 

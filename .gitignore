@@ -1,12 +1,4 @@
-__pycache__/
-code/__pycache__
+**/__pycache__
+**/.ipynb_checkpoints
 datasets/__MACOSX
-dnnlib/__pycache__
-dnnlib/.ipynb_checkpoints
-metrics/__pycache__
-metrics/.ipynb_checkpoints
-torch_utils/__pycache__
-torch_utils/.ipynb_checkpoints
-training/__pycache__
-training/.ipynb_checkpoints
 output/*
