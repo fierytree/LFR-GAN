@@ -46,11 +46,11 @@ python code/main_DMGAN.py --cfg code/cfg/bird_DMGAN.yml --gpu 0
 python code/main_DMGAN.py --cfg code/cfg/flower_DMGAN.yml --gpu 0
 ```
 
-For the training of Lafite models, please refer to [link](https://github.com/drboog/Lafite).
+For the training of Lafite models, please refer to [https://github.com/drboog/Lafite](https://github.com/drboog/Lafite).
 
 # Evaluate
 
-For the evaluation, please refer to [link](https://github.com/drboog/Lafite).
+For the evaluation, please refer to [Lafite](https://github.com/drboog/Lafite).
 
 
 For any questions, feel free to contact us (dengzijun57@gmail.com).
